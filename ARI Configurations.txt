@@ -1,0 +1,19 @@
+1. edit /etc/asterisk/ari.conf
+
+[general]
+enabled = yes
+pretty = yes
+allowed_origins = *
+
+[username]
+type = user
+read_only = no
+password = password
+
+2. edit /etc/asterisk/http.conf
+
+[general]
+servername=Asterisk
+enabled=yes
+bindaddr=0.0.0.0 ; Address to bind to, 0.0.0.0 is all IPs
+bindport=8088 ; Port to bind to for HTTP sessions, default 8088

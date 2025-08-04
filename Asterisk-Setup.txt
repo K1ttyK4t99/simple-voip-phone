@@ -1,0 +1,140 @@
+Setting up Asterisk:
+    1. Update system
+        sudo apt update && sudo apt upgrade -y
+    2. Install dependencies
+        sudo apt install -y build-essential wget subversion \
+        libxml2-dev libncurses5-dev uuid-dev libjansson-dev \
+        libssl-dev libsqlite3-dev libcurl4-openssl-dev \
+        libnewt-dev libpri-dev libedit-dev
+    3. Download Asterisk
+        wget https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-22-current-patch.tar.gz
+    4. Extract files
+        tar -xvzf <name of tar.gz file>
+    5. cd to directory of extracted files
+    6. sudo contrib/scripts/install_prereq install, ./configure, sudo make menuselect, sudo make, sudo make install, sudo make samples, sudo make config
+    7. sudo systemctl start asterisk
+    8. sudo systemctl enable asterisk
+    9. Verify it's running with systemctl status asterisk
+    10. Add users to pjsip.conf (directory is /etc/asterisk)
+        Example users:
+        [bob]
+        type=endpoint
+        context=internal
+        disallow=all
+        allow=ulaw
+        auth=bob-auth
+        aors=bob
+
+        [bob-auth]
+        type=auth
+        auth_type=userpass
+        username=bob
+        password=password
+
+        [bob]
+        type=aor
+        max_contacts=99999
+
+        [steven]
+        type=endpoint
+        context=internal
+        disallow=all
+        allow=ulaw
+        auth=steven-auth
+        aors=steven
+
+        [steven-auth]
+        type=auth
+        auth_type=userpass
+        username=steven
+        password=password2
+
+        [steven]
+        type=aor
+        max_contacts=99999
+    11. Add dialplan to extensions.conf
+        [internal]
+        exten => bob,1,Dial(PJSIP/bob)
+        exten => steven,1,Dial(PJSIP/steven)
+    12. Go into asterisk cli
+        sudo asterisk -rvvv
+    13. Reload pjsip and dialplan
+        pjsip reload
+        dialplan reload
+    14. All set up for internal calling!
+
+Setting up for external calling:
+    1. Buy a number in Telnyx, create SIP connection in Real-Time Communications -> SIP Trunking
+    2. Note down username and password under "Authentication and Routing"
+    3. Set Outbound voice profile to a profile of your making
+    4. Assign the number you bought in the "Numbers" section
+    5. Edit pjsip.conf as such:
+[global]
+type=global
+
+[transport-udp]
+type=transport
+protocol=udp
+bind=0.0.0.0:5060
+
+[username]
+type=endpoint
+context=from-internal
+disallow=all
+allow=ulaw,alaw,g722
+auth=username
+aors=username
+dtmf_mode=rfc4733
+transport=transport-udp
+
+[username]
+type=auth
+auth_type=userpass
+username=<SIP client username>
+password=<SIP client password>
+
+[username]
+type=aor
+max_contacts=99999
+
+[telnyx]
+type=endpoint
+transport=transport-udp
+context=from-pstn
+disallow=all
+allow=ulaw,alaw,g722,g729
+aors=telnyx-aor
+outbound_auth=telnyx-auth
+from_domain=sip.telnyx.com
+from_user=<telnyx phone number>
+dtmf_mode=rfc4733
+rewrite_contact=yes
+force_rport=yes
+
+[telnyx-auth]
+type=auth
+auth_type=userpass
+username=<telnyx username>
+password=<telnyx password>
+
+[telnyx-aor]
+type=aor
+contact=sip:sip.telnyx.com:5060
+qualify_frequency=60
+
+    6. Configure extensions.conf as such:
+[from-pstn]
+exten => _+1NXXXXXXXXX,1,Dial(PJSIP/<SIP client username>)
+exten => _NXXXXXXXXX,1,Dial(PJSIP/<SIP client username>)
+
+[from-internal]
+exten => _NXXNXXXXXX,1,Dial(PJSIP/+1${EXTEN}@telnyx)
+	same => n,Hangup()
+
+exten => _X.,1,Dial(PJSIP/+${EXTEN}@telnyx)
+	same => n,Hangup()
+
+	7. In the terminal, run the command "sudo asterisk -rvvv"
+	8. In the Asterisk CLI, run the commands "pjsip reload" and "dialplan reload"
+	9. Using a VOIP softphone such as Zoiper, test if it works by calling a phone number
+        NOTE: You can only call numbers you have verified through verification code if you're using a Telnyx trial account. A full paid account is needed if you wish to make calls to any number.
