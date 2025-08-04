@@ -4,6 +4,8 @@ import subprocess
 import time
 import call
 
+listener_process = None  # Define early
+
 if __name__ == "__main__":
     try:
         # Prompt FIRST, before starting listener
@@ -24,6 +26,6 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         print("\n[!] Shutting down.")
-        listener_process.terminate()
-        listener_process.wait()
-
+        if listener_process is not None:
+            listener_process.terminate()
+            listener_process.wait()
