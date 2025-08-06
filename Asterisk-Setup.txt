@@ -7,7 +7,7 @@ Setting up Asterisk:
         libssl-dev libsqlite3-dev libcurl4-openssl-dev \
         libnewt-dev libpri-dev libedit-dev
     3. Download Asterisk
-        wget https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-22-current-patch.tar.gz
+        wget https://downloads.asterisk.org/pub/telephony/asterisk/asterisk-22-current.tar.gz
     4. Extract files
         tar -xvzf <name of tar.gz file>
     5. cd to directory of extracted files
